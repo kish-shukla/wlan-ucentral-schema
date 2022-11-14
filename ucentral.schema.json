@@ -237,6 +237,10 @@
                         "full"
                     ]
                 },
+                "enabled": {
+                    "type": "boolean",
+                    "default": true
+                },
                 "services": {
                     "type": "array",
                     "items": {
@@ -458,12 +462,6 @@
                     "default": 100,
                     "maximum": 65535,
                     "minimum": 15
-                },
-                "dtim-period": {
-                    "type": "integer",
-                    "default": 2,
-                    "maximum": 255,
-                    "minimum": 1
                 },
                 "maximum-clients": {
                     "type": "integer",
@@ -1702,6 +1700,12 @@
                         ]
                     }
                 },
+                "dtim-period": {
+                    "type": "integer",
+                    "default": 2,
+                    "maximum": 255,
+                    "minimum": 1
+                },
                 "maximum-clients": {
                     "type": "integer",
                     "example": 64
@@ -1844,6 +1848,24 @@
                 }
             }
         },
+        "interface.tunnel.gre6": {
+            "type": "object",
+            "properties": {
+                "proto": {
+                    "type": "string",
+                    "const": "gre6"
+                },
+                "peer-address": {
+                    "type": "string",
+                    "format": "ipv6",
+                    "example": "2405:200:802:600:61::1"
+                },
+                "dhcp-healthcheck": {
+                    "type": "boolean",
+                    "default": false
+                }
+            }
+        },
         "interface.tunnel": {
             "oneOf": [
                 {
@@ -1857,6 +1879,9 @@
                 },
                 {
                     "$ref": "#/$defs/interface.tunnel.gre"
+                },
+                {
+                    "$ref": "#/$defs/interface.tunnel.gre6"
                 }
             ]
         },
@@ -2630,27 +2655,6 @@
                 }
             }
         },
-        "service.health-check": {
-            "type": "object",
-            "properties": {
-                "dhcp-local": {
-                    "type": "boolean",
-                    "default": true
-                },
-                "dhcp-remote": {
-                    "type": "boolean",
-                    "default": false
-                },
-                "dns-local": {
-                    "type": "boolean",
-                    "default": true
-                },
-                "dns-remote": {
-                    "type": "boolean",
-                    "default": true
-                }
-            }
-        },
         "service.captive.click": {
             "type": "object",
             "properties": {
@@ -2814,6 +2818,14 @@
                         "AA:BB:CC:DD:EE:FF",
                         "AA-BB-CC-DD-EE-FF"
                     ]
+                },
+                "final-redirect-url": {
+                    "type": "string",
+                    "enum": [
+                        "default",
+                        "uam"
+                    ],
+                    "default": "default"
                 }
             }
         },
@@ -2913,9 +2925,6 @@
                 "wireguard-overlay": {
                     "$ref": "#/$defs/service.wireguard-overlay"
                 },
-                "health-check": {
-                    "$ref": "#/$defs/service.health-check"
-                },
                 "captive": {
                     "$ref": "#/$defs/service.captive"
                 }
@@ -2925,7 +2934,8 @@
             "type": "object",
             "properties": {
                 "interval": {
-                    "type": "integer"
+                    "type": "integer",
+                    "minimum": 60
                 },
                 "types": {
                     "type": "array",
@@ -2946,6 +2956,22 @@
                 "interval": {
                     "type": "integer",
                     "minimum": 60
+                },
+                "dhcp-local": {
+                    "type": "boolean",
+                    "default": true
+                },
+                "dhcp-remote": {
+                    "type": "boolean",
+                    "default": false
+                },
+                "dns-local": {
+                    "type": "boolean",
+                    "default": true
+                },
+                "dns-remote": {
+                    "type": "boolean",
+                    "default": true
                 }
             }
         },

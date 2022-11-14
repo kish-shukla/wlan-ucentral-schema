@@ -447,6 +447,20 @@ function instantiateEthernet(location, value, errors) {
 			obj.duplex = parseDuplex(location + "/duplex", value["duplex"], errors);
 		}
 
+		function parseEnabled(location, value, errors) {
+			if (type(value) != "bool")
+				push(errors, [ location, "must be of type boolean" ]);
+
+			return value;
+		}
+
+		if (exists(value, "enabled")) {
+			obj.enabled = parseEnabled(location + "/enabled", value["enabled"], errors);
+		}
+		else {
+			obj.enabled = true;
+		}
+
 		function parseServices(location, value, errors) {
 			if (type(value) == "array") {
 				function parseItem(location, value, errors) {
@@ -990,29 +1004,6 @@ function instantiateRadio(location, value, errors) {
 		}
 		else {
 			obj.beacon_interval = 100;
-		}
-
-		function parseDtimPeriod(location, value, errors) {
-			if (type(value) in [ "int", "double" ]) {
-				if (value > 255)
-					push(errors, [ location, "must be lower than or equal to 255" ]);
-
-				if (value < 1)
-					push(errors, [ location, "must be bigger than or equal to 1" ]);
-
-			}
-
-			if (type(value) != "int")
-				push(errors, [ location, "must be of type integer" ]);
-
-			return value;
-		}
-
-		if (exists(value, "dtim-period")) {
-			obj.dtim_period = parseDtimPeriod(location + "/dtim-period", value["dtim-period"], errors);
-		}
-		else {
-			obj.dtim_period = 2;
 		}
 
 		function parseMaximumClients(location, value, errors) {
@@ -4476,6 +4467,29 @@ function instantiateInterfaceSsid(location, value, errors) {
 			obj.services = parseServices(location + "/services", value["services"], errors);
 		}
 
+		function parseDtimPeriod(location, value, errors) {
+			if (type(value) in [ "int", "double" ]) {
+				if (value > 255)
+					push(errors, [ location, "must be lower than or equal to 255" ]);
+
+				if (value < 1)
+					push(errors, [ location, "must be bigger than or equal to 1" ]);
+
+			}
+
+			if (type(value) != "int")
+				push(errors, [ location, "must be of type integer" ]);
+
+			return value;
+		}
+
+		if (exists(value, "dtim-period")) {
+			obj.dtim_period = parseDtimPeriod(location + "/dtim-period", value["dtim-period"], errors);
+		}
+		else {
+			obj.dtim_period = 2;
+		}
+
 		function parseMaximumClients(location, value, errors) {
 			if (type(value) != "int")
 				push(errors, [ location, "must be of type integer" ]);
@@ -4843,6 +4857,64 @@ function instantiateInterfaceTunnelGre(location, value, errors) {
 	return value;
 }
 
+function instantiateInterfaceTunnelGre6(location, value, errors) {
+	if (type(value) == "object") {
+		let obj = {};
+
+		function parseProto(location, value, errors) {
+			if (type(value) != "string")
+				push(errors, [ location, "must be of type string" ]);
+
+			if (value != "gre6")
+				push(errors, [ location, "must have value \"gre6\"" ]);
+
+			return value;
+		}
+
+		if (exists(value, "proto")) {
+			obj.proto = parseProto(location + "/proto", value["proto"], errors);
+		}
+
+		function parsePeerAddress(location, value, errors) {
+			if (type(value) == "string") {
+				if (!matchIpv6(value))
+					push(errors, [ location, "must be a valid IPv6 address" ]);
+
+			}
+
+			if (type(value) != "string")
+				push(errors, [ location, "must be of type string" ]);
+
+			return value;
+		}
+
+		if (exists(value, "peer-address")) {
+			obj.peer_address = parsePeerAddress(location + "/peer-address", value["peer-address"], errors);
+		}
+
+		function parseDhcpHealthcheck(location, value, errors) {
+			if (type(value) != "bool")
+				push(errors, [ location, "must be of type boolean" ]);
+
+			return value;
+		}
+
+		if (exists(value, "dhcp-healthcheck")) {
+			obj.dhcp_healthcheck = parseDhcpHealthcheck(location + "/dhcp-healthcheck", value["dhcp-healthcheck"], errors);
+		}
+		else {
+			obj.dhcp_healthcheck = false;
+		}
+
+		return obj;
+	}
+
+	if (type(value) != "object")
+		push(errors, [ location, "must be of type object" ]);
+
+	return value;
+}
+
 function instantiateInterfaceTunnel(location, value, errors) {
 	function parseVariant0(location, value, errors) {
 		value = instantiateInterfaceTunnelMesh(location, value, errors);
@@ -4864,6 +4936,12 @@ function instantiateInterfaceTunnel(location, value, errors) {
 
 	function parseVariant3(location, value, errors) {
 		value = instantiateInterfaceTunnelGre(location, value, errors);
+
+		return value;
+	}
+
+	function parseVariant4(location, value, errors) {
+		value = instantiateInterfaceTunnelGre6(location, value, errors);
 
 		return value;
 	}
@@ -4914,6 +4992,20 @@ function instantiateInterfaceTunnel(location, value, errors) {
 
 	tryerr = [];
 	tryval = parseVariant3(location, value, tryerr);
+	if (!length(tryerr)) {
+		if (type(vvalue) == "object" && type(tryval) == "object")
+			vvalue = { ...vvalue, ...tryval };
+		else
+			vvalue = tryval;
+
+		success++;
+	}
+	else {
+		push(verrors, join(" and\n", map(tryerr, err => "\t - " + err[1])));
+	}
+
+	tryerr = [];
+	tryval = parseVariant4(location, value, tryerr);
 	if (!length(tryerr)) {
 		if (type(vvalue) == "object" && type(tryval) == "object")
 			vvalue = { ...vvalue, ...tryval };
@@ -7220,75 +7312,6 @@ function instantiateServiceWireguardOverlay(location, value, errors) {
 	return value;
 }
 
-function instantiateServiceHealthCheck(location, value, errors) {
-	if (type(value) == "object") {
-		let obj = {};
-
-		function parseDhcpLocal(location, value, errors) {
-			if (type(value) != "bool")
-				push(errors, [ location, "must be of type boolean" ]);
-
-			return value;
-		}
-
-		if (exists(value, "dhcp-local")) {
-			obj.dhcp_local = parseDhcpLocal(location + "/dhcp-local", value["dhcp-local"], errors);
-		}
-		else {
-			obj.dhcp_local = true;
-		}
-
-		function parseDhcpRemote(location, value, errors) {
-			if (type(value) != "bool")
-				push(errors, [ location, "must be of type boolean" ]);
-
-			return value;
-		}
-
-		if (exists(value, "dhcp-remote")) {
-			obj.dhcp_remote = parseDhcpRemote(location + "/dhcp-remote", value["dhcp-remote"], errors);
-		}
-		else {
-			obj.dhcp_remote = false;
-		}
-
-		function parseDnsLocal(location, value, errors) {
-			if (type(value) != "bool")
-				push(errors, [ location, "must be of type boolean" ]);
-
-			return value;
-		}
-
-		if (exists(value, "dns-local")) {
-			obj.dns_local = parseDnsLocal(location + "/dns-local", value["dns-local"], errors);
-		}
-		else {
-			obj.dns_local = true;
-		}
-
-		function parseDnsRemote(location, value, errors) {
-			if (type(value) != "bool")
-				push(errors, [ location, "must be of type boolean" ]);
-
-			return value;
-		}
-
-		if (exists(value, "dns-remote")) {
-			obj.dns_remote = parseDnsRemote(location + "/dns-remote", value["dns-remote"], errors);
-		}
-		else {
-			obj.dns_remote = true;
-		}
-
-		return obj;
-	}
-
-	if (type(value) != "object")
-		push(errors, [ location, "must be of type object" ]);
-
-	return value;
-}
-
 function instantiateServiceCaptiveClick(location, value, errors) {
 	if (type(value) == "object") {
 		let obj = {};
@@ -7762,6 +7785,23 @@ function instantiateServiceCaptiveUam(location, value, errors) {
 			obj.mac_format = parseMacFormat(location + "/mac-format", value["mac-format"], errors);
 		}
 
+		function parseFinalRedirectUrl(location, value, errors) {
+			if (type(value) != "string")
+				push(errors, [ location, "must be of type string" ]);
+
+			if (!(value in [ "default", "uam" ]))
+				push(errors, [ location, "must be one of \"default\" or \"uam\"" ]);
+
+			return value;
+		}
+
+		if (exists(value, "final-redirect-url")) {
+			obj.final_redirect_url = parseFinalRedirectUrl(location + "/final-redirect-url", value["final-redirect-url"], errors);
+		}
+		else {
+			obj.final_redirect_url = "default";
+		}
+
 		return obj;
 	}
 
@@ -8060,10 +8100,6 @@ function instantiateService(location, value, errors) {
 			obj.wireguard_overlay = instantiateServiceWireguardOverlay(location + "/wireguard-overlay", value["wireguard-overlay"], errors);
 		}
 
-		if (exists(value, "health-check")) {
-			obj.health_check = instantiateServiceHealthCheck(location + "/health-check", value["health-check"], errors);
-		}
-
 		if (exists(value, "captive")) {
 			obj.captive = instantiateServiceCaptive(location + "/captive", value["captive"], errors);
 		}
@@ -8082,6 +8118,12 @@ function instantiateMetricsStatistics(location, value, errors) {
 		let obj = {};
 
 		function parseInterval(location, value, errors) {
+			if (type(value) in [ "int", "double" ]) {
+				if (value < 60)
+					push(errors, [ location, "must be bigger than or equal to 60" ]);
+
+			}
+
 			if (type(value) != "int")
 				push(errors, [ location, "must be of type integer" ]);
 
@@ -8145,6 +8187,62 @@ function instantiateMetricsHealth(location, value, errors) {
 
 		if (exists(value, "interval")) {
 			obj.interval = parseInterval(location + "/interval", value["interval"], errors);
+		}
+
+		function parseDhcpLocal(location, value, errors) {
+			if (type(value) != "bool")
+				push(errors, [ location, "must be of type boolean" ]);
+
+			return value;
+		}
+
+		if (exists(value, "dhcp-local")) {
+			obj.dhcp_local = parseDhcpLocal(location + "/dhcp-local", value["dhcp-local"], errors);
+		}
+		else {
+			obj.dhcp_local = true;
+		}
+
+		function parseDhcpRemote(location, value, errors) {
+			if (type(value) != "bool")
+				push(errors, [ location, "must be of type boolean" ]);
+
+			return value;
+		}
+
+		if (exists(value, "dhcp-remote")) {
+			obj.dhcp_remote = parseDhcpRemote(location + "/dhcp-remote", value["dhcp-remote"], errors);
+		}
+		else {
+			obj.dhcp_remote = false;
+		}
+
+		function parseDnsLocal(location, value, errors) {
+			if (type(value) != "bool")
+				push(errors, [ location, "must be of type boolean" ]);
+
+			return value;
+		}
+
+		if (exists(value, "dns-local")) {
+			obj.dns_local = parseDnsLocal(location + "/dns-local", value["dns-local"], errors);
+		}
+		else {
+			obj.dns_local = true;
+		}
+
+		function parseDnsRemote(location, value, errors) {
+			if (type(value) != "bool")
+				push(errors, [ location, "must be of type boolean" ]);
+
+			return value;
+		}
+
+		if (exists(value, "dns-remote")) {
+			obj.dns_remote = parseDnsRemote(location + "/dns-remote", value["dns-remote"], errors);
+		}
+		else {
+			obj.dns_remote = true;
 		}
 
 		return obj;

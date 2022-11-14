@@ -36,6 +36,8 @@ function freq2channel(freq) {
 		return (freq - 4000) / 5;
 	else if(freq >= 56160 + 2160 * 1 && freq <= 56160 + 2160 * 6)
 		return (freq - 56160) / 2160;
+	else if (freq >= 5955 && freq <= 7115)
+		return (freq - 5950) / 5;
 	else
 		return (freq - 5000) / 5;
 }
@@ -60,10 +62,13 @@ function lookup_wifs() {
 		w.bssid = wif.mac;
 		w.mode = iftypes[wif.iftype];
 		w.channel = [];
+		w.frequency = [];
 		w.tx_power = (wif.wiphy_tx_power_level / 100) || 0;
 		for (let f in [ wif.wiphy_freq, wif.center_freq1, wif.center_freq2 ])
-			if (f)
+			if (f) {
 				push(w.channel, freq2channel(f));
+				push(w.frequency, f);
+			}
 		if (chwidth[wif.channel_width])
 			w.ch_width = chwidth[wif.channel_width];
 		rv[wif.ifname] = w;

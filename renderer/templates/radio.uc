@@ -57,6 +57,9 @@
 		radio.country = capab.country_code;
 	}
 
+	if (length(restrict.country) && !(radio.country in restrict.country))
+		die("Country code is restricted");
+
 	function allowed_channel(radio) {
 		if (radio.channel_width == 20)
 			return true;
@@ -133,6 +136,11 @@
 
 		return modes[require_mode] || '';
 	}
+
+	if (restrict.dfs && radio.allow_dfs) {
+		warn('DFS is restricted.');
+		radio.allow_dfs = false;
+	}
 %}
 
 # Wireless Configuration
@@ -145,7 +153,6 @@ set wireless.{{ phy.section }}.channel={{ match_channel(phy, radio) }}
 set wireless.{{ phy.section }}.txantenna={{ match_mimo(phy.tx_ant, radio.mimo) }}
 set wireless.{{ phy.section }}.rxantenna={{ match_mimo(phy.rx_ant, radio.mimo) }}
 set wireless.{{ phy.section }}.beacon_int={{ radio.beacon_interval }}
-set wireless.{{ phy.section }}.dtim_period={{ radio.dtim_period }}
 set wireless.{{ phy.section }}.country={{ s(radio.country) }}
 set wireless.{{ phy.section }}.require_mode={{ s(match_require_mode(radio.require_mode)) }}
 set wireless.{{ phy.section }}.txpower={{ radio.tx_power }}
@@ -154,7 +161,8 @@ set wireless.{{ phy.section }}.chan_bw={{ radio.bandwidth }}
 set wireless.{{ phy.section }}.maxassoc={{ radio.maximum_clients }}
 set wireless.{{ phy.section }}.noscan=1
 set wireless.{{ phy.section }}.acs_exclude_dfs={{ b(!radio.allow_dfs) }}
-{% if (radio.allow_dfs) for (let channel in radio.valid_channels): %}
+{% for (let channel in radio.valid_channels): %}
+{%    if (!radio.allow_dfs && channel in phy.dfs_channels) continue %}
 add_list wireless.{{ phy.section }}.channels={{ channel }}
 {% endfor %}
 {%  if (radio.he_settings && phy.he_mac_capa && match(htmode, /HE.*/)): %}

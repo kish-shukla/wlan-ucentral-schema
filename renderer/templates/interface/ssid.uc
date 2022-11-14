@@ -390,8 +390,9 @@ set wireless.{{ section }}.time_advertisement={{ ssid.broadcast_time ? 2 : 0 }}
 set wireless.{{ section }}.isolate={{ b(ssid.isolate_clients) }}
 set wireless.{{ section }}.uapsd={{ b(ssid.power_save) }}
 set wireless.{{ section }}.rts_threshold={{ ssid.rts_threshold }}
-set wireless.{{ section }}.multicast_to_unicast={{ b(ssid.unicast_conversion) }}
+set wireless.{{ section }}.multicast_to_unicast_all={{ b(ssid.unicast_conversion) }}
 set wireless.{{ section }}.maxassoc={{ ssid.maximum_clients }}
+set wireless.{{ section }}.dtim_period={{ ssid.dtim_period }}
 
 {%     if (ssid.rate_limit): %}
 set wireless.{{ section }}.ratelimit=1
@@ -423,8 +424,8 @@ set wireless.{{ section }}.r1kh={{ s(ssid.roaming.pmk_r1_key_holder) }}
 {%     endif %}
 
 {%     if (ssid.quality_thresholds): %}
-set wireless.{{ section }}.rssi_reject_assoc_rssi={{ ssid.quality_thresholds.association_request_rssi }}
-set wireless.{{ section }}.rssi_ignore_probe_request={{ ssid.quality_thresholds.probe_request_rssi }}
+set wireless.{{ phy.section }}.rssi_reject_assoc_rssi={{ ssid.quality_thresholds.association_request_rssi }}
+set wireless.{{ phy.section }}.rssi_ignore_probe_request={{ ssid.quality_thresholds.probe_request_rssi }}
 set usteer2.{{ section }}=ssid
 set usteer2.{{ section }}.client_kick_rssi={{ ssid.quality_thresholds.client_kick_rssi }}
 set usteer2.{{ section }}.client_kick_ban_time={{ ssid.quality_thresholds.client_kick_ban_time }}

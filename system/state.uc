@@ -151,6 +151,7 @@ for (let radio, data in wifistatus) {
 
 	let radio = {};
 	radio.channel = vap.channel;
+	radio.frequency = vap.frequency;
 	radio.channel_width = vap.ch_width;
 	radio.tx_power = vap.tx_power;
 	let survey = ctx.call('wifi', 'survey', { 'channel': radio.channel[0] });
@@ -160,6 +161,7 @@ for (let radio, data in wifistatus) {
 	radio.phy = data.config.path;
 	if (wifiphy[data.config.path] && wifiphy[data.config.path].temperature)
 		radio.temperature = wifiphy[data.config.path].temperature;
+	radio.band = wifiphy[data.config.path].band;
 	push(state.radios, radio);
 }
 if (!length(state.radios))
@@ -303,6 +305,7 @@ cursor.foreach("network", "interface", function(d) {
 				ssid.ssid = wif.ssid;
 				ssid.mode = wif.mode;
 				ssid.bssid = wif.bssid;
+				ssid.frequency = wif.frequency;
 
 				if (length(stations[vap.ifname])) {
 					ssid.associations = stations[vap.ifname];
